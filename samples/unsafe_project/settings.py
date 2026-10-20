@@ -1,0 +1,2 @@
+API_KEY = "dck_01H8Q2V9N6mR4pT7cA3f5B8"
+DEBUG = True

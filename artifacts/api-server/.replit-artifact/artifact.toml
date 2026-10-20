@@ -1,6 +1,6 @@
 kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
-title = "API Server"
+previewPath = "/api"
+title = "DeployCheck API"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
 
@@ -10,19 +10,15 @@ name = "API Server"
 paths = ["/api"]
 
 [services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+run = "python -m uvicorn deploycheck_api.main:app --app-dir artifacts/api-server --host 0.0.0.0 --port 8080"
 
 [services.production]
 
 [services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
-
-[services.production.build.env]
-NODE_ENV = "production"
+args = ["uv", "sync", "--frozen"]
 
 [services.production.run]
-# we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+args = ["uv", "run", "--no-sync", "python", "-m", "uvicorn", "deploycheck_api.main:app", "--app-dir", "artifacts/api-server", "--host", "0.0.0.0", "--port", "8080"]
 
 [services.production.run.env]
 PORT = "8080"

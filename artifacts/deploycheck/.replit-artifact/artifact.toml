@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "DeployCheck"
+description = "A practical pre-deployment checker that safely scans project archives for likely secrets, missing environment declarations, and common configuration risks, with redacted evidence and concrete fixes."
+version = "1.0.0"
+id = "artifacts/deploycheck"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24221
+
+[services.development]
+run = "pnpm --filter @workspace/deploycheck run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/deploycheck", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/deploycheck/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24221"
+BASE_PATH = "/"

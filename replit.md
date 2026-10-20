@@ -1,45 +1,54 @@
-# [Project name]
+# DeployCheck
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+DeployCheck statically inspects project ZIP archives for likely secrets, missing environment declarations, and a small set of deployment configuration risks.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- The managed `artifacts/api-server: API Server` workflow serves the FastAPI routes under `/api`.
+- The managed `artifacts/deploycheck: web` workflow serves the React interface.
+- `uv run --project . pytest -q` — run scanner and API tests.
+- `pnpm run typecheck` — typecheck the shared TypeScript workspace.
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API client and schemas after OpenAPI changes.
+- No database, account system, or external API is required.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React, Vite, TypeScript, and generated React Query API hooks.
+- API: Python, FastAPI, and Pydantic.
+- Python dependencies: `pyproject.toml` and `uv.lock`.
+- API contract: `lib/api-spec/openapi.yaml`, generated with Orval.
+- Tests: pytest and FastAPI TestClient.
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/deploycheck` — user-facing upload and findings interface.
+- `artifacts/api-server/deploycheck_api` — FastAPI app, response schemas, and ZIP scanner.
+- `artifacts/api-server/tests` — API and scanner tests.
+- `lib/api-spec/openapi.yaml` — source of truth for the API contract.
+- `samples/safe_project` and `samples/unsafe_project` — synthetic demo projects.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Scans are in-memory and stateless; uploaded archives and scan results are not persisted.
+- ZIP entries are inspected without extracting files or executing project code.
+- Findings treat matches as potential risks and redact credential-like values before returning evidence.
+- No readiness score is shown; this MVP does not certify that a project is secure.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Upload a project ZIP, run a static scan, review severity-ranked findings, and export a Markdown report.
+- Checks include credential patterns, environment-variable declarations, private environment files in the archive, `.gitignore` presence, and enabled debug settings.
+- Scans apply compressed-size, entry-count, file-count, per-file, total-uncompressed-size, compression-ratio, and runtime limits.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+_No standing preferences recorded._
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, rerun codegen before typechecking or using generated hooks.
+- Example credentials in tests and samples are synthetic only.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- See `.local/skills/pnpm-workspace/SKILL.md` for workspace structure and artifact routing.

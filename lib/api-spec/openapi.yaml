@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: scans
+    description: Safe, static project scanning
 paths:
   /healthz:
     get:
@@ -24,6 +26,51 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /v1/scans:
+    post:
+      operationId: scanProject
+      tags: [scans]
+      summary: Scan an uploaded project archive
+      description: |
+        Inspects supported text and configuration files in a ZIP archive without
+        executing project code. Credential-like values are redacted from findings.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ScanUpload"
+      responses:
+        "200":
+          description: Scan completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScanResponse"
+        "400":
+          description: Invalid ZIP archive or unsafe archive entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "413":
+          description: Archive exceeds the supported size limits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "408":
+          description: Static scan exceeded its time limit
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Invalid scan request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +80,103 @@ components:
           type: string
       required:
         - status
+    ScanUpload:
+      type: object
+      properties:
+        archive:
+          type: string
+          format: binary
+      required: [archive]
+    ScanResponse:
+      type: object
+      properties:
+        scan_id:
+          type: string
+          format: uuid
+        archive_name:
+          type: string
+        scanned_at:
+          type: string
+          format: date-time
+        files_scanned:
+          type: integer
+          minimum: 0
+        files_skipped:
+          type: integer
+          minimum: 0
+        environment_references_checked:
+          type: integer
+          minimum: 0
+        environment_declarations_available:
+          type: boolean
+        severity_counts:
+          $ref: "#/components/schemas/SeverityCounts"
+        findings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Finding"
+        limitations:
+          type: array
+          items:
+            type: string
+      required:
+        - scan_id
+        - archive_name
+        - scanned_at
+        - files_scanned
+        - files_skipped
+        - environment_references_checked
+        - environment_declarations_available
+        - severity_counts
+        - findings
+        - limitations
+    Finding:
+      type: object
+      properties:
+        rule_id:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        message:
+          type: string
+        file_path:
+          type: string
+        line_number:
+          type: [integer, "null"]
+        evidence:
+          type: string
+        recommendation:
+          type: string
+      required:
+        - rule_id
+        - title
+        - severity
+        - message
+        - file_path
+        - line_number
+        - evidence
+        - recommendation
+    SeverityCounts:
+      type: object
+      properties:
+        critical:
+          type: integer
+        high:
+          type: integer
+        medium:
+          type: integer
+        low:
+          type: integer
+        info:
+          type: integer
+      required: [critical, high, medium, low, info]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
 
