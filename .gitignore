@@ -56,9 +56,15 @@ Thumbs.db
 .env
 venv/
 
-.replitignore
-.replit.md
+replit
+replit.md
+.replit.nix
+.replit/
 .replit
+.replitignore
+
 
 Deploycheck.git/
 Deploycheck/
+
+.gitignore
